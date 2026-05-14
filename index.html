@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rocky 的法學庫</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; padding:0; height:100%; background:#181818; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", "Helvetica Neue", sans-serif; color:#e6e6e6; overflow:hidden; }
+  .app { display:grid; grid-template-columns: 280px 1fr; height:100vh; }
+  .sidebar { background:#1f1f1f; border-right:1px solid #333; padding: 16px 14px; overflow-y:auto; }
+  .sb-title { margin: 0 0 12px; font-size: 16px; color: #a78bfa; font-weight:600; }
+  .sb-sub { font-size:11px; color:#666; margin-bottom:12px; }
+  .sb-stats { font-size:11px; color:#888; padding:8px 10px; background:#252525; border-radius:6px; margin-bottom:12px; }
+  .sb-search { width:100%; background:#2a2a2a; border:1px solid #444; color:#eee; padding:8px 10px; border-radius:6px; font-size:13px; margin-bottom:12px; }
+  .sb-search:focus { outline:none; border-color:#a78bfa; }
+  .dom-group { margin-bottom: 16px; }
+  .dom-label { font-size:11px; color:#888; padding: 4px 6px; letter-spacing: 0.5px; font-weight:600; }
+  .issue-item { padding: 8px 10px 8px 14px; font-size:13px; cursor:pointer; border-radius:4px; color:#ccc; line-height:1.4; margin-bottom:2px; }
+  .issue-item:hover { background:#2a2a2a; color:#fff; }
+  .issue-item.active { background:#3a2a5a; color:#fff; border-left:2px solid #a78bfa; padding-left: 12px; }
+  .imp { color:#f5b942; font-size:10px; margin-right: 4px; }
+  .main { padding: 28px 36px 60px; overflow-y:auto; max-width: 900px; }
+  .crumb { font-size:12px; color:#888; margin-bottom: 8px; }
+  .dom-badge { background:#3a2a5a; color:#a78bfa; padding: 3px 10px; border-radius: 10px; font-size:11px; margin-right:6px; }
+  .title-h1 { font-size: 24px; font-weight:600; color:#fff; margin: 0 0 6px; line-height:1.3; }
+  .tags-row { margin: 12px 0 20px; }
+  .tag { display:inline-block; background:#2a2a2a; color:#a78bfa; padding: 3px 10px; border-radius:10px; font-size:11px; margin-right:4px; margin-bottom:4px; }
+  .section { margin: 22px 0; }
+  .sec-label { font-size:12px; color:#888; letter-spacing: 0.5px; margin-bottom: 8px; font-weight:600; }
+  .core-q { background:#222; border-left:3px solid #a78bfa; padding: 14px 16px; font-size:14px; line-height:1.7; color:#eee; text-align:center; }
+  .views-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:12px; }
+  .view-card { background:#222; border:1px solid #333; border-radius:6px; padding: 14px 16px; }
+  .view-type { display:inline-block; padding: 2px 10px; border-radius: 10px; font-size:11px; margin-bottom: 8px; font-weight:500; }
+  .view-type.shimu { background:#1e3a2e; color:#7ed4a8; }
+  .view-type.xueshuo { background:#3a2e1e; color:#f5b942; }
+  .view-type.benshu { background:#3a2a5a; color:#a78bfa; }
+  .view-title { font-size: 13px; font-weight:500; color:#fff; margin-bottom: 6px; }
+  .view-body { font-size: 13px; line-height:1.75; color:#ccc; white-space: pre-wrap; }
+  .view-cites { margin-top: 10px; font-size:11px; color:#888; }
+  .cite-tag { display:inline-block; padding: 2px 8px; background:#1a1a1a; border:1px solid #333; border-radius: 3px; margin-right:4px; margin-bottom:2px; color:#a78bfa; }
+  .myview-box { background:#1a1a2a; border:1px solid #3a2a5a; border-radius:6px; padding: 16px 18px; font-size:14px; line-height:1.75; color:#e6e6e6; text-align:center; }
+  .myview-empty { color:#666; font-style:italic; }
+  .link-row { display:flex; flex-wrap: wrap; gap:6px; }
+  .link-chip { background:#2a2a2a; border:1px solid #444; border-radius:4px; padding: 6px 10px; font-size:12px; color:#ccc; cursor:pointer; }
+  .link-chip:hover { background:#3a2a5a; color:#a78bfa; }
+  .law-card { background:#222; border:1px solid #333; border-radius:6px; padding: 14px 16px; margin-top:10px; }
+  .law-card-title { font-size:13px; font-weight:600; color:#a78bfa; margin-bottom: 6px; }
+  .law-content { font-size:12.5px; line-height:1.75; color:#ccc; white-space: pre-wrap; }
+  .law-note { font-size:12px; color:#888; margin-top:8px; padding-top:8px; border-top:1px dashed #333; font-style:italic; }
+  .foot { font-size:11px; color:#666; padding: 16px 0 0; border-top:1px solid #333; margin-top:32px; text-align:center; }
+  .empty-state { color:#666; text-align:center; padding: 60px 20px; }
+  .menu-btn { display:none; position:fixed; top:12px; left:12px; z-index:100; background:#3a2a5a; color:#fff; border:none; padding:10px 14px; border-radius:6px; font-size:14px; cursor:pointer; }
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position:fixed; left:-100%; top:0; width:85%; max-width:320px; height:100vh; z-index:50; transition: left 0.3s; box-shadow: 2px 0 12px rgba(0,0,0,0.5); padding-top: 56px; }
+    .sidebar.open { left:0; }
+    .main { padding: 56px 18px 60px; }
+    .menu-btn { display:block; }
+    .title-h1 { font-size: 20px; }
+    .views-grid { grid-template-columns: 1fr; }
+    .backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40; }
+    .backdrop.show { display:block; }
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" id="menu-btn" onclick="toggleSidebar()">☰ 爭點清單</button>
+<div class="backdrop" id="backdrop" onclick="toggleSidebar()"></div>
+<div class="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sb-title">Rocky 的法學庫</div>
+    <div class="sb-sub">以爭點為核心 · 司律二試備考</div>
+    <div class="sb-stats" id="stats"></div>
+    <input class="sb-search" id="kb-search" placeholder="搜尋爭點、標籤..." />
+    <div id="kb-tree"></div>
+  </div>
+  <div class="main" id="kb-main">
+    <div class="empty-state">點左側爭點查看內容</div>
+  </div>
+</div>
+<script>
+const KB_DATA = {"version":"1.2","exportedAt":"2026-05-14T10:50:09.000Z","device":"Mac","issues":[{"id":"i1","title":"連帶債務之共同訴訟類型","domain":"civil_proc","importance":5,"tags":["共同訴訟","§55","§56","連帶債務"],"coreQuestion":"連帶債務人為共同被告時,究為普通共同訴訟、必要共同訴訟、抑或準必要共同訴訟?","views":[{"type":"實務","title":"普通共同訴訟說 (例外§56)","body":"原則上屬普通共同訴訟。例外於連帶債務人中之一人提出「非基於個人關係之抗辯」且「有理由」時,適用 §56-Ⅰ,效力及於全體。法律依據:民法 §275。","cites":["民訴§55","民訴§56","民法§275"]},{"type":"學說","title":"始終普通共同訴訟說 (劉明生)","body":"始終為普通共同訴訟,遇絕對效力事項時將其解為 §55「除別有規定外」即可。理由:① 連帶債務性質上為複數債務、各自獨立;② §275 僅是判決援用效果,與訴訟行為效力無關;③ 判斷標準應為訴訟標的對數人是否合一確定,而非攻防方法。","cites":["民訴§55","民法§275"]},{"type":"學說","title":"準必要共同訴訟說 (許士宦)","body":"訴訟標的雖非須合一確定,但連帶債務人間有「實體法上共通事項」,邏輯上須合一確定者,法院仍不得作出相異裁判 → 類推適用 §56。目的:避免裁判矛盾、紛爭統一解決。","cites":["民訴§56"]}],"myView":"一審程序進行中,重點在訴訟齊一化(避免裁判矛盾、紛爭統一解決),不應等審理後才使效力及於他人 → 採準必要說。上訴階段則因需考量訴訟費用等程序利益,改採實務說 — 此非矛盾,而是不同時點的程序法理不同。","linkedLaws":["民訴§55","民訴§56","民法§275"],"linkedPrecedents":["p1","p2"],"linkedExams":["e1"],"linkedIssues":["i2","i3"],"createdAt":"2026-05-10","updatedAt":"2026-05-11"},{"id":"i2","title":"連帶債務人一人上訴效力是否及於未上訴之他人","domain":"civil_proc","importance":5,"tags":["上訴效力","連帶債務","§275"],"coreQuestion":"連帶債務人中之一人上訴,效力是否及於未上訴之他連帶債務人?","views":[{"type":"實務","title":"結果判斷說 (主流)","body":"須法院審理後認上訴理由「非基於個人關係且有理由」者,上訴效力始及於未上訴之他人。法律依據:民法 §275。","cites":["民法§275"]},{"type":"學說","title":"形式判斷說 (許士宦、姜世明)","body":"於合法上訴時,形式上觀察上訴理由,若為「非基於個人關係之抗辯」且「形式上有利於全體」者,效力即及於他人。參酌 52 台上 1930 號判例。","cites":["民法§275"]},{"type":"學說","title":"普通共同訴訟說 (劉明生)","body":"應尊重各連帶債務人在上訴權方面之處分權主義,上訴效力不及於未上訴之人。理由:① 不願上訴者可能評估無望;② 上訴使判決較晚確定,利息增加之不利益應由上訴人自負;③ 處分權主義基於私法自治。","cites":[]}],"myView":"贊同實務見解。理由:① 形式判斷說有過度侵害不願上訴者之程序處分權之虞(訴訟費用、利息增加);② 普通共同訴訟說忽略裁判矛盾之疑慮,亦使嗣後求償關係複雜化;③ 實務見解之操作雖有未受程序保障之疑慮,惟此乃自行選擇不願上訴所導致,毋寧係更尊重其程序處分權之展現。","linkedLaws":["民法§275"],"linkedPrecedents":["p1"],"linkedExams":["e1","e2"],"linkedIssues":["i1"],"createdAt":"2026-05-10","updatedAt":"2026-05-11"},{"id":"i3","title":"時效抗辯之定性:個人關係抗辯 v. 共通事項","domain":"civil_proc","importance":5,"tags":["時效","個人關係抗辯","陷阱題"],"coreQuestion":"連帶債務人中之一人主張時效抗辯,對其他連帶債務人發生何等效力?","views":[{"type":"實務","title":"時效抗辯屬個人關係抗辯","body":"① 連帶債務發生原因未必同一,時效起算點未必相同;② 縱使發生原因同一,各債務人之時效可能各有「中斷」或「不完成」之事由;③ 時效抗辯為權利之行使,並非事實之主張,應尊重各人之處分權。","cites":["民法§144","民法§276","最高法院 95 台上 1778"]}],"myView":"千萬不能寫成「非基於個人關係抗辯」!這是失分大戶。但於連帶保證的情形,基於保證契約之從屬性,主債務人之時效抗辯依民法 §276-Ⅱ 將使保證人同免責任,屬「乙與丁保證關係」中的共通事項。","linkedLaws":["民法§144","民法§276","民法§280"],"linkedPrecedents":["p3"],"linkedExams":["e1"],"linkedIssues":["i1","i2"],"createdAt":"2026-05-10","updatedAt":"2026-05-11"},{"id":"i_crimproc_116_2","title":"停止羈押:法院得通知註銷護照","domain":"crim_proc","importance":3,"tags":["§116-2","停止羈押","護照註銷","114修法"],"coreQuestion":"法院命停止羈押並要求交付護照、旅行文件時,得否主動通知主管機關「註銷」護照?","views":[{"type":"本書","title":"新法 §116-2 Ⅰ⑥(114.10.17 修正)","body":"法院許可停止羈押時,得命被告交付護照、旅行文件;法院亦得通知主管機關「不予核發」或「註銷」護照、旅行文件。","cites":["刑訴§116-2"]},{"type":"本書","title":"立法理由","body":"目前通緝犯逾 8 萬,有出境紀錄者逾 8 千,占比逾一成。原規定僅得「不核發」護照,被告卻可持既有護照出境,規避司法程序。為填補治安漏洞,賦予法院主動通知主管機關「註銷」護照、旅行文件之權。","cites":[]}],"myView":"","linkedLaws":["刑訴§116-2"],"linkedPrecedents":[],"linkedExams":[],"linkedIssues":[],"createdAt":"2026-05-14","updatedAt":"2026-05-14"},{"id":"i_crimproc_205_2","title":"強制採尿應經檢察官許可","domain":"crim_proc","importance":5,"tags":["§205-2","強制處分","採尿","111憲判16","114修法"],"coreQuestion":"檢察事務官、司法警察(官)為調查犯罪,得否違反受採取人之意思,逕行強制採尿?應踐行何等程序?","views":[{"type":"本書","title":"新法 §205-2 Ⅱ、Ⅲ(114.10.17 修正)","body":"Ⅱ:有相當理由認採尿得作為犯罪證據並有鑑定之必要者,得違反受採取人意思,「報請檢察官許可」,以「非侵入方式」採取;於有非即時採尿無法有效保全證據之急迫情況,得逕以非侵入方式採取。\nⅢ:前項後段逕行採尿,應於採取後「24 小時內」報請檢察官許可;檢察官認不應准許者,應於「3 日內」撤銷之。","cites":["刑訴§205-2"]},{"type":"本書","title":"憲法依據:111 憲判 16","body":"尿液採檢對身體權及資訊隱私權構成重大限制,須有檢察官事前/事後審查機制。本次修法即為落實憲判意旨,將原本僅以「相當理由」即可採取之尿液,提升為原則上須檢察官許可、例外急迫情況始得逕行採取但仍須事後審查。","cites":["111憲判16"]},{"type":"本書","title":"違反程序之證據能力","body":"非法逕行採取,或採取後未依 §205-2 Ⅲ 報請事後審查經准許/被檢察官撤銷者,均屬「違背法定程序取得之證據」,有無證據能力由法院依「§158-4 權衡法則」於審判時認定(立法理由三明示)。","cites":["刑訴§158-4"]}],"myView":"","linkedLaws":["刑訴§205-2","刑訴§205-3","刑訴§205-4","刑訴§158-4"],"linkedPrecedents":[],"linkedExams":[],"linkedIssues":["i_crimproc_205_3","i_crimproc_205_4"],"createdAt":"2026-05-14","updatedAt":"2026-05-14"},{"id":"i_crimproc_205_3","title":"採尿許可書之記載事項與形式要求","domain":"crim_proc","importance":3,"tags":["§205-3","強制處分","採尿許可書","114修法增訂"],"coreQuestion":"依 §205-2 Ⅱ 報請檢察官許可採尿,許可書應如何記載?執行時應踐行何等程序?","views":[{"type":"本書","title":"新法 §205-3(114.10.17 增訂)","body":"Ⅰ 應用許可書,並記載:一、案由 二、受採取之犯罪嫌疑人或被告 三、應鑑定之事項 四、執行之機關及期間。\nⅡ 許可書由檢察官簽名。\nⅢ 執行時應出示許可書及可證明身分之文件。\nⅣ 期間屆滿後不得執行,應即將許可書交還。","cites":["刑訴§205-3"]},{"type":"本書","title":"立法理由:與 §204-1 鑑定許可書一致","body":"考量本條許可書與 §204-1 鑑定許可書同屬鑑定許可書,內容與執行方式應具一致性,避免實務混淆與證據能力爭議,故參酌 §204-1、§204-2 體例。","cites":["刑訴§204-1","刑訴§204-2"]}],"myView":"","linkedLaws":["刑訴§205-3","刑訴§204-1","刑訴§204-2"],"linkedPrecedents":[],"linkedExams":[],"linkedIssues":["i_crimproc_205_2"],"createdAt":"2026-05-14","updatedAt":"2026-05-14"},{"id":"i_crimproc_205_4","title":"受採取人對逕行採尿之救濟","domain":"crim_proc","importance":4,"tags":["§205-4","強制處分救濟","採尿","114修法增訂"],"coreQuestion":"受採取人對檢察事務官、司法警察(官)依 §205-2 Ⅱ 後段「逕行採尿」不服者,如何救濟?","views":[{"type":"本書","title":"新法 §205-4(114.10.17 增訂)","body":"Ⅰ 受採取人對逕行採尿不服者,得向該管法院聲請撤銷。\nⅡ 聲請期間「10 日」,自採取之日起算;法院「不得以已執行終結而無實益為由駁回」。\nⅢ 準用 §409~§414、§417、§418 Ⅱ。\nⅣ 對於第一項裁定「不得抗告」。","cites":["刑訴§205-4"]},{"type":"本書","title":"立法理由","body":"考量 §418 Ⅰ 對 §416 聲請所為裁定不得抗告之規定,得否抗告屬救濟之重要事項,並參酌 §245-1 體例,爰於第四項定明不得抗告。","cites":["刑訴§418","刑訴§245-1"]}],"myView":"","linkedLaws":["刑訴§205-4","刑訴§205-2"],"linkedPrecedents":[],"linkedExams":[],"linkedIssues":["i_crimproc_205_2"],"createdAt":"2026-05-14","updatedAt":"2026-05-14"},{"id":"i_crimproc_101_1","title":"預防性羈押罪名之擴張(115.04.17 修正)","domain":"crim_proc","importance":5,"tags":["§101-1","預防性羈押","115修法","再犯率"],"coreQuestion":"115.04.17 修正後,預防性羈押(§101-1)之適用罪名擴張至哪些?其立法理由為何?","views":[{"type":"本書","title":"本次新增罪名一覽","body":"① 第一款放火類:新增「§185-3 不能安全駕駛罪」\n② 第二款性/暴力類:新增「§272-1 殺幼童罪、§286 凌虐或妨害未成年人健康發育罪、§319-1~§319-4 妨害性影像四罪、兒少性剝削防制條例 §36 Ⅰ~Ⅴ、§38 Ⅰ、Ⅲ、Ⅳ」\n③ 第三款妨害自由類:新增「§302-1」\n④ 第七款詐欺類:新增「詐欺犯罪危害防制條例 §43、§44」\n⑤ 第九款槍砲類:新增「§9-1、§12、§13、§13-1」(原僅 §7、§8)\n⑥ 第十一款人口販運:條號移列,§34 → §32\n⑦ 新增第十二款:組織犯罪防制條例 §3 Ⅰ 前段","cites":["刑訴§101-1"]},{"type":"本書","title":"立法理由:再犯率甚高","body":"新增各罪名「依實務經驗再犯率甚高」,有以預防性羈押防止反覆實行同一犯罪之必要。其中第十一款係配合人口販運防制法 112.6.14 修正(原 §34 移列為 §32)。","cites":[]}],"myView":"","linkedLaws":["刑訴§101-1"],"linkedPrecedents":[],"linkedExams":[],"linkedIssues":[],"createdAt":"2026-05-14","updatedAt":"2026-05-14"}],"laws":[{"id":"民訴§55","lawName":"民事訴訟法","article":"第55條","content":"共同訴訟中,一人之行為或他造對於共同訴訟人中一人之行為及關於其一人所生之事項,除別有規定外,其利害不及於他共同訴訟人。","note":"普通共同訴訟之獨立原則,「除別有規定外」即留給 §56 等規定發揮的空間。","linkedIssues":["i1"]},{"id":"民訴§56","lawName":"民事訴訟法","article":"第56條","content":"訴訟標的對於共同訴訟之各人必須合一確定者,適用左列各款之規定:\n一、共同訴訟人中一人之行為有利益於共同訴訟人者,其效力及於全體;不利益者,對於全體不生效力。\n二、他造對於共同訴訟人中一人之行為,其效力及於全體。\n三、共同訴訟人中之一人,生有訴訟當然停止或裁定停止之原因者,其當然或裁定停止之效力及於全體。","note":"必要共同訴訟之核心效力規定。","linkedIssues":["i1"]},{"id":"民法§275","lawName":"民法","article":"第275條","content":"連帶債務人中之一人受確定判決,而其判決非基於該債務人之個人關係者,為他債務人之利益亦生效力。","note":"實務以此條為「連帶債務上訴效力」之論述依據。","linkedIssues":["i1","i2"]},{"id":"民法§276","lawName":"民法","article":"第276條","content":"債權人向連帶債務人中之一人免除債務,而無消滅全部債務之意思表示者,除該債務人應分擔之部分外,他債務人仍不免其責任。\n前項規定,於連帶債務人中之一人消滅時效已完成者,準用之。","note":"§276-Ⅱ 是時效抗辯的「相對效力 + 限制絕對效力」。","linkedIssues":["i3"]},{"id":"民法§144","lawName":"民法","article":"第144條","content":"時效完成後,債務人得拒絕給付。\n請求權已經時效消滅,債務人仍為履行之給付者,不得以不知時效為理由,請求返還。","note":"我國法採抗辯權主義。","linkedIssues":["i3"]},{"id":"民法§280","lawName":"民法","article":"第280條","content":"連帶債務人相互間,除法律另有規定或契約另有訂定外,應平均分擔義務。","note":"內部分擔額之原則性規定。"},{"id":"刑訴§116-2","lawName":"刑事訴訟法","article":"第116條之2","content":"法院許可停止羈押時...第六款:交付護照、旅行文件;法院亦得通知主管機關不予核發【或註銷】護照、旅行文件。","note":"【114.10.17 修正】第六款新增「或註銷」三字。立法理由:通緝犯出境問題。","linkedIssues":["i_crimproc_116_2"]},{"id":"刑訴§205-2","lawName":"刑事訴訟法","article":"第205條之2","content":"...有相當理由認為採取尿液得作為犯罪之證據,並有鑑定之必要,得違反其意思,報請檢察官許可,以非侵入方式採取之;於急迫情況,得逕以非侵入方式採取之。前項後段逕行採尿,應於採取後二十四小時內報請檢察官許可,檢察官認為不應准許者,應於三日內撤銷之。","note":"【114.10.17 修正】採尿獨立規範,要求檢察官許可。憲法依據:111 憲判 16。","linkedIssues":["i_crimproc_205_2"]},{"id":"刑訴§205-3","lawName":"刑事訴訟法","article":"第205條之3","content":"前條第2項之許可,應用許可書,記載:一、案由 二、受採取之犯罪嫌疑人或被告 三、應鑑定之事項 四、執行之機關及期間。許可書由檢察官簽名。","note":"【114.10.17 增訂全條】採尿許可書之形式要件。","linkedIssues":["i_crimproc_205_3"]},{"id":"刑訴§205-4","lawName":"刑事訴訟法","article":"第205條之4","content":"受採取人對逕行採尿不服者,得向該管法院聲請撤銷。聲請期間為十日。對於第1項之裁定,不得抗告。","note":"【114.10.17 增訂全條】逕行採尿之救濟,聲請期間 10 日,裁定不得抗告。","linkedIssues":["i_crimproc_205_4"]},{"id":"刑訴§101-1","lawName":"刑事訴訟法","article":"第101條之1","content":"被告經法官訊問後,認為犯下列各款之罪,其嫌疑重大,有事實足認為有反覆實行同一犯罪之虞,而有羈押之必要者,得羈押之。(共 12 款罪名)","note":"【115.04.17 修正】預防性羈押大幅擴張。立法理由:再犯率甚高。","linkedIssues":["i_crimproc_101_1"]}],"precedents":[{"id":"p1","name":"最高法院 104 年度台抗字第 1058 號裁定","holding":"債權人以各連帶債務人為共同被告提起給付之訴,僅於被告一人提出非基於其個人關係之抗辯有理由者,對於共同被告之各人方須合一確定。","date":"2015"},{"id":"p2","name":"最高法院 112 年度台上字第 63 號民事判決","holding":"債權人以各連帶債務人為共同被告提起給付之訴,被告一人提出非基於其個人關係之抗辯有理由者,對於被告各人即屬必須合一確定。","date":"2023"},{"id":"p3","name":"最高法院 95 年度台上字第 1778 號判決","holding":"連帶債務之發生原因不必同一,故構成連帶債務之各債務,其消滅時效之起算點及時效期間,得不相同。縱令期間同一、同時進行,而時效之中斷或不完成,惟生相對之效力。","date":"2006"}],"exams":[{"id":"e1","year":"108","exam":"司律二試","title":"連帶保證 + 時效抗辯","facts":"甲於 108.4.20 對乙、丙、丁起訴,請求三人連帶給付 45 萬。"},{"id":"e2","year":"112","exam":"司律二試","title":"車禍 + 連帶 + 不真正連帶 + 撤回上訴","facts":"甲搭乙駕駛機車經 A 地,丙駕車闖紅燈、丁駕車超速。"}]};
+const DOMAIN_LABEL = { civil_proc:'民訴', civil:'民法', criminal:'刑法', crim_proc:'刑訴', admin:'公法', constitutional:'憲法', estate_tax:'遺贈稅' };
+const VIEW_CLASS = { '實務':'shimu', '學說':'xueshuo', '本書':'benshu' };
+let activeId = null, searchTerm = '';
+function esc(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('backdrop').classList.toggle('show'); }
+function renderStats(){ document.getElementById('stats').textContent = `${KB_DATA.issues.length} 爭點 · ${KB_DATA.laws.length} 法條 · ${KB_DATA.precedents.length} 判決 · ${KB_DATA.exams.length} 考題`; }
+function renderTree(){
+  const tree = document.getElementById('kb-tree');
+  const term = searchTerm.toLowerCase();
+  const matched = KB_DATA.issues.filter(i => !term || i.title.toLowerCase().includes(term) || (i.tags||[]).some(t=>t.toLowerCase().includes(term)) || (i.coreQuestion||'').toLowerCase().includes(term));
+  const byDomain = {};
+  matched.forEach(i => { (byDomain[i.domain] = byDomain[i.domain] || []).push(i); });
+  let html = '';
+  Object.keys(byDomain).sort().forEach(d => {
+    html += '<div class="dom-group"><div class="dom-label">' + (DOMAIN_LABEL[d]||d) + ' (' + byDomain[d].length + ')</div>';
+    byDomain[d].forEach(issue => {
+      const stars = '★'.repeat(issue.importance || 0);
+      html += '<div class="issue-item ' + (issue.id===activeId?'active':'') + '" data-id="' + esc(issue.id) + '"><span class="imp">' + stars + '</span>' + esc(issue.title) + '</div>';
+    });
+    html += '</div>';
+  });
+  if(matched.length===0) html = '<div class="empty-state" style="font-size:12px;padding:30px 10px;">沒找到符合的爭點</div>';
+  tree.innerHTML = html;
+  tree.querySelectorAll('.issue-item').forEach(el => el.addEventListener('click', () => { selectIssue(el.dataset.id); if(window.innerWidth<=768) toggleSidebar(); }));
+}
+function selectIssue(id){
+  activeId = id;
+  const issue = KB_DATA.issues.find(i=>i.id===id);
+  if(!issue) return;
+  const main = document.getElementById('kb-main');
+  const stars = '★'.repeat(issue.importance||0);
+  let html = '<div class="crumb"><span class="dom-badge">' + (DOMAIN_LABEL[issue.domain]||issue.domain) + '</span><span class="imp" style="color:#f5b942;">' + stars + '</span></div>';
+  html += '<h1 class="title-h1">' + esc(issue.title) + '</h1>';
+  if(issue.tags && issue.tags.length) html += '<div class="tags-row">' + issue.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join('') + '</div>';
+  if(issue.coreQuestion){ html += '<div class="section"><div class="sec-label">核心問題</div><div class="core-q">' + esc(issue.coreQuestion) + '</div></div>'; }
+  if(issue.views && issue.views.length){
+    html += '<div class="section"><div class="sec-label">各家見解</div><div class="views-grid">';
+    issue.views.forEach(v => {
+      const cls = VIEW_CLASS[v.type] || 'benshu';
+      html += '<div class="view-card"><span class="view-type '+cls+'">' + esc(v.type) + '</span><div class="view-title">' + esc(v.title) + '</div><div class="view-body">' + esc(v.body) + '</div>';
+      if(v.cites && v.cites.length) html += '<div class="view-cites">' + v.cites.map(c=>'<span class="cite-tag">'+esc(c)+'</span>').join('') + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+  html += '<div class="section"><div class="sec-label">我的立場</div><div class="myview-box">' + (issue.myView ? esc(issue.myView) : '<span class="myview-empty">(尚未填寫個人見解)</span>') + '</div></div>';
+  if(issue.linkedLaws && issue.linkedLaws.length){
+    html += '<div class="section"><div class="sec-label">相關法條</div>';
+    issue.linkedLaws.forEach(lid => {
+      const law = KB_DATA.laws.find(l=>l.id===lid);
+      if(law){ html += '<div class="law-card"><div class="law-card-title">' + esc(law.lawName) + ' ' + esc(law.article) + '</div><div class="law-content">' + esc(law.content) + '</div>' + (law.note?'<div class="law-note">'+esc(law.note)+'</div>':'') + '</div>'; }
+      else { html += '<div class="law-card"><div class="law-card-title">' + esc(lid) + ' (法條未建檔)</div></div>'; }
+    });
+    html += '</div>';
+  }
+  if(issue.linkedPrecedents && issue.linkedPrecedents.length){
+    html += '<div class="section"><div class="sec-label">相關判決</div>';
+    issue.linkedPrecedents.forEach(pid => { const p = KB_DATA.precedents.find(x=>x.id===pid); if(p) html += '<div class="law-card"><div class="law-card-title">' + esc(p.name) + ' (' + esc(p.date||'') + ')</div><div class="law-content">' + esc(p.holding||'') + '</div></div>'; });
+    html += '</div>';
+  }
+  if(issue.linkedExams && issue.linkedExams.length){
+    html += '<div class="section"><div class="sec-label">考過的題目</div>';
+    issue.linkedExams.forEach(eid => { const e = KB_DATA.exams.find(x=>x.id===eid); if(e) html += '<div class="law-card"><div class="law-card-title">' + esc(e.year) + ' ' + esc(e.exam) + ' — ' + esc(e.title) + '</div><div class="law-content">' + esc(e.facts||'') + '</div></div>'; });
+    html += '</div>';
+  }
+  if(issue.linkedIssues && issue.linkedIssues.length){
+    html += '<div class="section"><div class="sec-label">關聯爭點</div><div class="link-row">';
+    issue.linkedIssues.forEach(iid => { const ii = KB_DATA.issues.find(x=>x.id===iid); if(ii) html += '<span class="link-chip" data-issue="' + esc(iid) + '">' + esc(ii.title) + '</span>'; });
+    html += '</div></div>';
+  }
+  html += '<div class="foot">爭點 ID: ' + esc(issue.id) + '</div>';
+  main.innerHTML = html;
+  main.scrollTop = 0;
+  main.querySelectorAll('[data-issue]').forEach(el => el.addEventListener('click', () => { selectIssue(el.dataset.issue); renderTree(); }));
+  renderTree();
+}
+document.getElementById('kb-search').addEventListener('input', e => { searchTerm = e.target.value; renderTree(); });
+renderStats();
+renderTree();
+if(KB_DATA.issues.length > 0) selectIssue(KB_DATA.issues[0].id);
+</script>
+</body>
+</html>
